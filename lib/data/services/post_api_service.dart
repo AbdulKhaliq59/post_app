@@ -1,15 +1,21 @@
 import 'dart:convert';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:post_app/domain/models/post.dart';
 import "package:http/http.dart" as http;
 
 class PostApiService {
   final String _baseUrl = 'https://newsapi.org/v2/everything';
-  final String _apiKey = '137dee1cfd874df88413635ec5406229';
 
   Future<List<Post>> fetchPosts() async {
+    final apiKey = dotenv.env['API_KEY'];
+
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('API_KEY not found in .env file');
+    }
+
     final url = Uri.parse(
-      '$_baseUrl?q=apple&from=2025-05-19&to=2025-05-19&sortBy=popularity&apiKey=$_apiKey',
+      '$_baseUrl?q=apple&from=2025-05-19&to=2025-05-19&sortBy=popularity&apiKey=$apiKey',
     );
     final response = await http.get(url);
 
