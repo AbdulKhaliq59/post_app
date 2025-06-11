@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:post_app/ui/core/themes/app_theme.dart';
 import 'package:post_app/ui/post/viewmodel/post_view_model.dart';
 import 'package:post_app/ui/post/widgets/post_card.dart';
+import 'package:post_app/utils/result.dart';
 import 'package:provider/provider.dart';
 
 class PostScreen extends StatelessWidget {
@@ -11,9 +12,12 @@ class PostScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final viewModel = Provider.of<PostViewModel>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+
+    final fetchCommand = viewModel.fetchPostCommand;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Posts"),
+        title: const Text("Posts"),
         actions: [
           Row(
             children: [
@@ -30,16 +34,30 @@ class PostScreen extends StatelessWidget {
           ),
         ],
       ),
+      body: Builder(
+        builder: (context) {
+          if (fetchCommand.running) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-      body:
-          viewModel.isLoading
-              ? Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                itemCount: viewModel.posts.length,
-                itemBuilder: (context, index) {
-                  return PostCard(post: viewModel.posts[index]);
-                },
-              ),
+          final result = fetchCommand.result;
+          if (result == null) {
+            // No result yet, trigger fetch
+            fetchCommand.execute();
+            return const Center(child: Text("Loading posts..."));
+          }
+
+          return switch (result) {
+            Ok<List> r => ListView.builder(
+              itemCount: r.value.length,
+              itemBuilder: (context, index) {
+                return PostCard(post: r.value[index]);
+              },
+            ),
+            Error() => Center(child: Text("Failed to load posts.")),
+          };
+        },
+      ),
     );
   }
 }
