@@ -1,36 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:post_app/providers/post_providers.dart';
 import 'package:post_app/ui/core/themes/app_theme.dart';
-import 'package:post_app/ui/post/viewmodel/post_view_model.dart';
 import 'package:post_app/ui/post/widgets/post_card.dart';
 import 'package:post_app/utils/result.dart';
-import 'package:provider/provider.dart';
 
-class PostScreen extends StatelessWidget {
+class PostScreen extends ConsumerWidget {
   const PostScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final viewModel = Provider.of<PostViewModel>(context);
-    final themeProvider = Provider.of<ThemeProvider>(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final viewModel = ref.watch(postViewModelProvider);
+    final themeNotifier = ref.watch(themeProviderNotifier.notifier);
 
+    final isDark = themeNotifier.isDark;
+
+    debugPrint("DarkMode State: $isDark");
     final fetchCommand = viewModel.fetchPostCommand;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("Posts"),
         actions: [
-          Row(
-            children: [
-              const Icon(Icons.light_mode),
-              Switch(
-                value: themeProvider.isDark,
-                onChanged: (val) {
-                  themeProvider.toggleTheme();
-                },
-              ),
-              const Icon(Icons.dark_mode),
-              const SizedBox(width: 8),
-            ],
+          IconButton(
+            icon: Icon(isDark ? Icons.dark_mode : Icons.light_mode),
+            onPressed: () => themeNotifier.toggleTheme(),
           ),
         ],
       ),
@@ -41,8 +34,8 @@ class PostScreen extends StatelessWidget {
           }
 
           final result = fetchCommand.result;
+          debugPrint("Fetch command result: $result");
           if (result == null) {
-            // No result yet, trigger fetch
             fetchCommand.execute();
             return const Center(child: Text("Loading posts..."));
           }

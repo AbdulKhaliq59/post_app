@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:post_app/ui/core/themes/dark_theme.dart';
 import 'package:post_app/ui/core/themes/light_theme.dart';
 
-class ThemeProvider with ChangeNotifier {
-  ThemeData _themeData = lightTheme;
+class ThemeNotifier extends Notifier<ThemeData> {
   bool _isDark = false;
 
-  ThemeData get theme => _themeData;
-  bool get isDark => _isDark;
+  @override
+  ThemeData build() => lightTheme;
 
   void toggleTheme() {
     _isDark = !_isDark;
-    _themeData = _isDark ? darkTheme : lightTheme;
-    notifyListeners();
+    state = _isDark ? darkTheme : lightTheme;
+    debugPrint("Theme changed to ${_isDark ? 'Dark' : 'Light'}");
   }
+
+  bool get isDark => _isDark;
 }
+
+final themeProviderNotifier = NotifierProvider<ThemeNotifier, ThemeData>(
+  () => ThemeNotifier(),
+);

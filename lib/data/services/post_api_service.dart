@@ -1,30 +1,43 @@
-import 'dart:convert';
-
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:post_app/domain/models/post.dart';
-import "package:http/http.dart" as http;
+import "package:dio/dio.dart";
+import 'package:post_app/ui/core/constants/api_constants.dart';
+import 'package:post_app/ui/core/constants/error_messages.dart';
 
 class PostApiService {
-  final String _baseUrl = 'https://newsapi.org/v2/everything';
+  final Dio _dio = Dio();
 
   Future<List<Post>> fetchPosts() async {
-    final apiKey = dotenv.env['API_KEY'];
-
+    final apiKey = dotenv.env[kApiKeyEnv];
     if (apiKey == null || apiKey.isEmpty) {
-      throw Exception('API_KEY not found in .env file');
+      throw Exception(kApiKeyNotFoundError);
     }
+    try {
+      final response = await _dio.get(
+        kBaseUrl,
+        queryParameters: {
+          'q': kQuery,
+          'from': kFromDate,
+          'to': kToDate,
+          'sortBy': kSortBy,
+          'apiKey': apiKey,
+        },
+      );
 
-    final url = Uri.parse(
-      '$_baseUrl?q=apple&from=2025-05-19&to=2025-05-19&sortBy=popularity&apiKey=$apiKey',
-    );
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final articles = data['articles'] as List;
-      return articles.map((article) => Post.fromJson(article)).toList();
-    } else {
-      throw Exception('Failed to load post');
+      final articles = response.data['articles'] as List;
+      return articles.map((article) {
+        return Post.fromJson(article);
+      }).toList();
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw Exception(
+          'API Error: ${e.response?.statusCode} - ${e.response?.data}',
+        );
+      } else {
+        throw Exception('Network Error: ${e.message}');
+      }
+    } catch (e) {
+      throw Exception('Unexpected Error: $e');
     }
   }
 }
