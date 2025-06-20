@@ -4,9 +4,15 @@ import "package:dio/dio.dart";
 import 'package:post_app/ui/core/constants/api_constants.dart';
 import 'package:post_app/ui/core/constants/error_messages.dart';
 
-class PostApiService {
-  final Dio _dio = Dio();
+abstract class IPostApiService {
+  Future<List<Post>> fetchPosts();
+}
 
+class PostApiService implements IPostApiService {
+  final Dio _dio;
+  PostApiService({Dio? dio}) : _dio = dio ?? Dio();
+
+  @override
   Future<List<Post>> fetchPosts() async {
     final apiKey = dotenv.env[kApiKeyEnv];
     if (apiKey == null || apiKey.isEmpty) {

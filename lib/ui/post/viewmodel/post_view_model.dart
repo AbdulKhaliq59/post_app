@@ -5,7 +5,7 @@ import 'package:post_app/utils/command.dart';
 import 'package:post_app/utils/result.dart';
 
 class PostViewModel extends ChangeNotifier {
-  final PostRepository _repository;
+  final IPostRepository _repository;
 
   PostViewModel(this._repository) {
     fetchPostCommand = Command0<List<Post>>(_fetchPosts);
