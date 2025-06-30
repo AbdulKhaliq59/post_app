@@ -14,7 +14,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.0'
+          flutter-version: '3.19.6'
 
       - name: Install dependencies
         run: flutter pub get
@@ -28,4 +28,5 @@ jobs:
           echo "Tests failed. PR cannot be merged."
           exit 1
 
-# GitHub will block merging if this workflow fails, so only passing PRs can be merged.
+# Ensure the flutter-version matches your pubspec.yaml SDK constraint (e.g., 3.7.2 or higher)
+# Update the flutter-version above if you upgrade your Dart/Flutter SDK in pubspec.yaml
