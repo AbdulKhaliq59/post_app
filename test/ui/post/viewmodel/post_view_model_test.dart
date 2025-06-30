@@ -6,7 +6,7 @@ import 'package:post_app/domain/models/post.dart';
 import 'package:post_app/ui/post/viewmodel/post_view_model.dart';
 import 'package:post_app/utils/result.dart';
 
-import 'post_view_model.mocks.dart';
+import 'post_view_model_test.mocks.dart';
 
 @GenerateMocks([IPostRepository])
 void main() {
