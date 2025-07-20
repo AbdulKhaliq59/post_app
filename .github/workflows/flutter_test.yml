@@ -5,10 +5,11 @@ on:
     branches: [ main, master ]
 
 jobs:
-  build:
+  test-and-upload:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout source
         uses: actions/checkout@v4
 
       - name: Set up Flutter
@@ -22,28 +23,34 @@ jobs:
       - name: Run tests with coverage
         run: flutter test --coverage
 
-      - name: Convert lcov to coverage summary
+      - name: Generate and check coverage
+        id: check_coverage
         run: |
           sudo apt-get update && sudo apt-get install -y lcov
           genhtml coverage/lcov.info --output-directory coverage/html
           lcov --summary coverage/lcov.info
-
-      - name: Check coverage percentage
-        id: coverage
-        run: |
-          COVERAGE=$(lcov --summary coverage/lcov.info | grep -Po 'lines\.+: \K[0-9]+(?=\.\d+%\s+\()')
-          echo "Coverage: $COVERAGE%"
+          COVERAGE=$(lcov --summary coverage/lcov.info | grep -Po 'lines\.+: \K[0-9]+(?=\.\d+%)')
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
           if [ "$COVERAGE" -lt 80 ]; then
-            echo "Test coverage ($COVERAGE%) is below 80%. PR cannot be merged."
+            echo "❌ Test coverage is $COVERAGE%, which is below the required 80%."
             exit 1
           fi
-          echo "Test coverage is $COVERAGE% (>= 80%)"
+          echo "✅ Test coverage is $COVERAGE%, proceeding to build and upload APK."
 
-      - name: Upload coverage report artifact
+      - name: Upload coverage HTML report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/html
 
-# This workflow will block merging if coverage is below 80% or tests fail.
-# The coverage summary will be available as an artifact and in the logs.
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK to Firebase App Distribution
+        run: |
+          npm install -g firebase-tools
+          firebase appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk \
+            --app ${{ secrets.FIREBASE_APP_ID }} \
+            --token ${{ secrets.FIREBASE_TOKEN }} \
+            --groups testers \
+            --release-notes "CI build from GitHub PR (Coverage: $COVERAGE%)"
