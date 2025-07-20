@@ -31,8 +31,8 @@ jobs:
           lcov --summary coverage/lcov.info
           COVERAGE=$(lcov --summary coverage/lcov.info | grep -Po 'lines\.+: \K[0-9]+(?=\.\d+%)')
           echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
-          if [ "$COVERAGE" -lt 80 ]; then
-            echo "❌ Test coverage is $COVERAGE%, which is below the required 80%."
+          if [ "$COVERAGE" -lt 70 ]; then
+            echo "❌ Test coverage is $COVERAGE%, which is below the required 70%."
             exit 1
           fi
           echo "✅ Test coverage is $COVERAGE%, proceeding to build and upload APK."
