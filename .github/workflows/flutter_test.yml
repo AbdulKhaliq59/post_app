@@ -1,0 +1,58 @@
+name: Flutter CI + Firebase APK Upload
+
+on:
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test-and-upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests with coverage
+        run: flutter test --coverage
+
+      - name: Generate and check coverage
+        id: check_coverage
+        run: |
+          sudo apt-get update && sudo apt-get install -y lcov
+          genhtml coverage/lcov.info --output-directory coverage/html
+          lcov --summary coverage/lcov.info
+          COVERAGE=$(lcov --summary coverage/lcov.info | grep -Po 'lines\.+: \K[0-9]+(?=\.\d+%)')
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+          if [ "$COVERAGE" -lt 70 ]; then
+            echo "❌ Test coverage is $COVERAGE%, which is below the required 70%."
+            exit 1
+          fi
+          echo "✅ Test coverage is $COVERAGE%, proceeding to build and upload APK."
+
+      - name: Upload coverage HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/html
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK to Firebase App Distribution
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase.json
+        run: |
+          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON }}" > /tmp/firebase.json
+          npm install -g firebase-tools
+          firebase appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk \
+            --app ${{ secrets.FIREBASE_APP_ID }} \
+            --groups testers \
+            --release-notes "CI build from GitHub PR (Coverage: $COVERAGE%)"

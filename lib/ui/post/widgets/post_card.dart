@@ -10,20 +10,21 @@ class PostCard extends StatelessWidget {
 
   void _launchURL(BuildContext context, String url) async {
     final Uri uri = Uri.parse(url);
+    final messenger = ScaffoldMessenger.of(context);
     try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         debugPrint('Could not launch $url');
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Could not launch $url')));
+        messenger.showSnackBar(
+          SnackBar(content: Text('Could not launch $url')),
+        );
       }
     } catch (e) {
       debugPrint('Error launching URL: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to open browser: $e')));
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to open browser: $e')),
+      );
     }
   }
 
