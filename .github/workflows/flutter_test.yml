@@ -1,8 +1,8 @@
-name: Flutter CI
+name: Flutter CI + Firebase APK Upload
 
 on:
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
   test-and-upload:
@@ -46,16 +46,13 @@ jobs:
       - name: Build release APK
         run: flutter build apk --release
 
-      - name: Authenticate with Firebase using service account
+      - name: Upload APK to Firebase App Distribution
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase.json
         run: |
           echo "${{ secrets.GOOGLE_CREDENTIALS_JSON }}" > /tmp/firebase.json
-          export GOOGLE_APPLICATION_CREDENTIALS="/tmp/firebase.json"
-
-      - name: Upload APK to Firebase App Distribution
-        run: |
           npm install -g firebase-tools
           firebase appdistribution:distribute build/app/outputs/flutter-apk/app-release.apk \
             --app ${{ secrets.FIREBASE_APP_ID }} \
             --groups testers \
-            --release-notes "CI build from GitHub Action"
-
+            --release-notes "CI build from GitHub PR (Coverage: $COVERAGE%)"
